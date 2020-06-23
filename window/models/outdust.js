@@ -2,6 +2,12 @@
 
 module.exports = (sequelize, DataType) => {
     var outdust = sequelize.define('outdust', {
+        no : {
+            type : DataType.INTEGER,
+            autoIncrement: true,
+            unique: true,
+            primaryKey:true
+        },
         outdust : {
             type : DataType.INTEGER,
             allowNull: false
@@ -12,7 +18,7 @@ module.exports = (sequelize, DataType) => {
             allowNull: false
         },
         weather : {
-            type : DataType.STRING,
+            type : DataType.INTEGER,
             allowNull: false
         },
         userregion : {

@@ -7,27 +7,35 @@ var CronJob = require('cron').CronJob;
 
 
 //자동제어 시 실행 될 함수
-const auto = function() {
-    models.outdust.findAll({
-        attributes : [ outdust , weather ],
-        limit : 1,
-        order : 'time desc'
+const auto = function(res) {
+    models.outdust.findOne({
+        where: {
+            no : 1
+        },
+        order : [[ 'time' , 'DESC']]
         })
         .then( outdu =>{
-            models.indust.findAll({
-                attributes : [ indust ],
-                limit : 1,
-                order : 'time desc'
+            models.indust.findOne({
+                where: {
+                    no : 1
+                },
+                order : [[ 'time' , 'DESC']]
             })
             .then( indu => {
-            if( outdu[0].dataValues.weather === "0" ) { //강수코드 0일때만 자동조절 온
-                if( indu[0].dataValues.indust < outdu[0].dataValues.outdust){ // 실외 미세먼지가 더 높을때
+                console.log("자동제어중");
+            if( outdu.dataValues.weather === 0 ) { //강수코드 0일때만 자동조절 온
+                if( indu.dataValues.indust < outdu.dataValues.outdust){ // 실외 미세먼지가 더 높을때
                    models.window.update({
                         status : "close"
+                    },{
+                        where: {
+                            no : 1
+                        }
                     })
-                    .then( statusopen =>{
+                    .then( statusclose =>{
                         console.log("실외미세먼지가 많아 창문을 닫습니다.");
-                        res.json({
+                        return({
+                                    success : statusclose,
                                     resultCode : resCode.SuccessCode,
                                     message : resCode.Windowclose
                             })
@@ -39,10 +47,15 @@ const auto = function() {
                 {
                     models.window.update({
                         status : "open"
+                    },{
+                        where: {
+                            no : 1
+                        }
                     })
                    .then( statusopen =>{
                         console.log("실내미세먼지가 많아 창문을 엽니다.");
-                        res.json({
+                        return({
+                            success : statusopen,
                             resultCode : resCode.SuccessCode,
                             message : resCode.Windowopen
                         })
@@ -50,7 +63,7 @@ const auto = function() {
                     .catch( err => {
                         console.log(err);
                         console.log("창문 열기 실패")
-                        res.json({
+                        return({
                             resultCode : resCode.FailedCode,
                             message : resCode.UpdateError
                         })
@@ -63,7 +76,7 @@ const auto = function() {
                     })
                     .then( statusopen =>{
                         console.log("실외의 강수코드가 1이상 이므로 창문을 닫습니다.");
-                        res.json({
+                        return({
                             resultCode : resCode.SuccessCode,
                             message : resCode.WindowWeatherclose
                         })
@@ -71,7 +84,7 @@ const auto = function() {
                     .catch( err => {
                         console.log(err);
                         console.log("창문 닫기 실패");
-                        res.json({
+                        return({
                             resultCode : resCode.FailedCode,
                             message : resCode.UpdateError
                         })
@@ -81,7 +94,7 @@ const auto = function() {
             .catch( err => {
                 console.log(err);
                 console.log("실내 데이터 조회 실패");
-                res.json({
+                return({
                     resultCode : resCode.ReadErrorCode,
                     message : resCode.ReadError
                 })
@@ -89,7 +102,7 @@ const auto = function() {
         })
         .catch( err => {
             console.log("실외 데이터 조회 실패");
-            res.json({
+            return({
                 resultCode : resCode.ReadErrorCode,
                 message : resCode.ReadError
             })
@@ -100,7 +113,7 @@ const auto = function() {
 const stopAlert = () => console.log("스케줄러 종료");
 
 // 10분간격으로 실행 / auto함수 실행 / 종료시 메시지 / 자동시작여부 / TimeZone
-const job = new CronJob('*/10 * * * *', auto, stopAlert, false, 'Asia/Seoul');
+const job = new CronJob('*/2 * * * * *', auto, stopAlert, false, 'Asia/Seoul');
 
 
 //주소 저장 하기
@@ -390,6 +403,8 @@ router.put('/window/autoon', function(req, res, next) {
     
     models.window.update({
         auto : 1
+    }, {
+        where: { auto : 0 }
     })
     .then( result => {
         console.log("창문 자동제어를 시작합니다.");
@@ -414,6 +429,8 @@ router.put('/window/autooff', function(req, res, next) {
     
     models.window.update({
         auto : 0
+    },{
+        where : { auto : 1 }
     })
     .then( result => {
         console.log("창문 자동제어를 종료합니다.");

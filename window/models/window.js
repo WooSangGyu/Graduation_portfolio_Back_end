@@ -2,9 +2,13 @@
 
 module.exports = (sequelize, DataType) => {
     var window = sequelize.define('window', {
+        no : {
+            type: DataType.INTEGER,
+            autoIncrement:true,
+            primaryKey: true
+        },
         status : {
             type : DataType.STRING,
-            primaryKey: true,
             allowNull: false
         },
         auto : {
