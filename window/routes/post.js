@@ -9,10 +9,16 @@ var CronJob = require('cron').CronJob;
 //자동제어 시 실행 될 함수
 const auto = function(res) {
     models.outdust.findOne({
+        where : {
+            no : 1
+        },
         order : [[ 'time' , 'DESC']]
         })
         .then( outdu =>{
             models.indust.findOne({
+                where : {
+                    no : 1
+                },
                 order : [[ 'time' , 'DESC']]
             })
             .then( indu => {
